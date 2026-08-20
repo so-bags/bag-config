@@ -3,14 +3,53 @@ import React, { useState, useMemo } from "react";
 /* Paper #EFE7DA · Card #F8F3E8 · Ink #2B241F · Rosewood #B25B54 · Mustard #D6A24A · Teal #4C7A72 */
 
 const YARN_COLORS = [
-  { name: "Panna", hex: "#EDE3CE" },
-  { name: "Terracotta", hex: "#B25B54" },
-  { name: "Senape", hex: "#D6A24A" },
-  { name: "Salvia", hex: "#6F8F6A" },
-  { name: "Prugna", hex: "#7C5A78" },
-  { name: "Petrolio", hex: "#3E6B72" },
-  { name: "Cioccolato", hex: "#5A4032" },
-  { name: "Corallo", hex: "#D97B6C" },
+  { name: "Bianco", hex: "#F9F9F7" },
+  { name: "Avorio", hex: "#F5F0DC" },
+  { name: "Ecrù", hex: "#E7D9B4" },
+  { name: "Beige", hex: "#D9B77A" },
+  { name: "Grigio Chiaro", hex: "#B4B8B9" },
+  { name: "Grigio", hex: "#7A7A7A" },
+  { name: "Fango", hex: "#A48F60" },
+  { name: "Toffee", hex: "#7B4A2A" },
+  { name: "Cacao", hex: "#4A2B19" },
+  { name: "Cioccolato Fondente", hex: "#3A1F14" },
+  { name: "Antracite", hex: "#2E2E2E" },
+  { name: "Giallo Vivo", hex: "#F1C51C" },
+  { name: "Girasole", hex: "#E28619" },
+  { name: "Ocra", hex: "#C08A34" },
+  { name: "Arancione", hex: "#F06419" },
+  { name: "Verde Lime", hex: "#7CB92E" },
+  { name: "Verde Neon", hex: "#8DD649" },
+  { name: "Salvia", hex: "#8FAE72" },
+  { name: "Verde Smeraldo", hex: "#2E9F4F" },
+  { name: "Verde Vittoriano", hex: "#179A66" },
+  { name: "Verde Giada", hex: "#3FBB9F" },
+  { name: "Turchese", hex: "#40C9C1" },
+  { name: "Verde Militare", hex: "#5C5A29" },
+  { name: "Oliva", hex: "#6E6B28" },
+  { name: "Verde Bottiglia", hex: "#1B5F3A" },
+  { name: "Celeste Baby", hex: "#A9CBE7" },
+  { name: "Puffo", hex: "#1D8A9E" },
+  { name: "Carta da Zucchero", hex: "#5C8A99" },
+  { name: "Petrolio", hex: "#1B5E64" },
+  { name: "Denim Blu", hex: "#4A79B1" },
+  { name: "Blu Elettrico", hex: "#1B2A6B" },
+  { name: "Blu Navy", hex: "#131949" },
+  { name: "Lilla", hex: "#C99AC4" },
+  { name: "Viola", hex: "#5C2C82" },
+  { name: "Viola Ametista", hex: "#4B1E63" },
+  { name: "Orchidea", hex: "#8E1B5C" },
+  { name: "Fucsia Supremo", hex: "#9B1E7A" },
+  { name: "Rosa Caramella", hex: "#F2A0B6" },
+  { name: "Fucsia", hex: "#E81759" },
+  { name: "Rosa Neon", hex: "#F01980" },
+  { name: "Lampone", hex: "#E21C4F" },
+  { name: "Corallo", hex: "#E07388" },
+  { name: "Rosa Antico", hex: "#C08484" },
+  { name: "Terracotta", hex: "#C0443A" },
+  { name: "Rosso", hex: "#E11B1C" },
+  { name: "Bordeaux", hex: "#7B1220" },
+  { name: "Vinaccia", hex: "#6E1227" },
 ];
 
 const PAILLETTE_COLORS = [
@@ -30,8 +69,21 @@ const SIZES = [
   { id: "grande", name: "Grande", cm: 22, scale: 1.0 },
 ];
 
-const BODY_ONDULATO = "M20,153 Q17,171 42,173 L158,173 Q183,171 180,153 L172,115 Q168,80 130,75 Q100,69 70,75 Q32,80 28,115 Z";
-const BODY_DRITTO = "M20,153 Q17,171 42,173 L158,173 Q183,171 180,153 L172,115 L130,72 L70,72 L28,115 Z";
+// The frame ("chiusura click clack"), once covered in yarn, coincides with
+// the bag's own top edge — it isn't a separate piece rising above the body.
+// Two full silhouettes (outer edge including the frame's outline, plus an
+// inset opening for the hand) traced from the real hardware: flat "dritto"
+// and wavy "ondulato".
+// Both variants share the EXACT same outer silhouette from the reference
+// photo — nothing is added on top of it. Only the top segment differs:
+// "dritto" flattens just the peak into a straight line (the rest of the
+// curve, from the shoulders inward, is untouched); "ondulato" keeps the
+// original curve as-is and instead has a wavy line inscribed at the opening.
+const BODY_DRITTO_OUTER = "M20,153 Q17,171 42,173 L158,173 Q183,171 180,153 L172,115 Q168,80 130,75 L70,75 Q32,80 28,115 Z";
+const BODY_DRITTO_HOLE = "M60,85 A40,8 0 1,0 140,85 A40,8 0 1,0 60,85 Z";
+
+const BODY_ONDULATO_OUTER = "M20,153 Q17,171 42,173 L158,173 Q183,171 180,153 L172,115 Q168.29,82.54 135.33,75.88 Q134.15,75.88 133.56,75.88 Q132.97,75.88 132.39,75.89 Q131.80,75.89 131.21,75.91 Q130.62,75.92 130.03,75.94 Q129.44,75.96 128.85,76.00 Q128.26,76.04 127.68,76.09 Q127.09,76.15 126.50,76.22 Q125.91,76.30 125.32,76.39 Q124.73,76.48 124.14,76.60 Q123.55,76.71 122.96,76.84 Q122.38,76.97 121.79,77.12 Q121.20,77.27 120.61,77.43 Q120.02,77.59 119.43,77.76 Q118.84,77.93 118.25,78.10 Q117.67,78.28 117.08,78.45 Q116.49,78.62 115.90,78.79 Q115.31,78.96 114.72,79.12 Q114.13,79.28 113.54,79.43 Q112.95,79.58 112.37,79.71 Q111.78,79.84 111.19,79.95 Q110.60,80.07 110.01,80.16 Q109.42,80.25 108.83,80.33 Q108.24,80.40 107.65,80.46 Q107.07,80.51 106.48,80.55 Q105.89,80.59 105.30,80.61 Q104.71,80.63 104.12,80.64 Q103.53,80.66 102.94,80.66 Q102.36,80.67 101.77,80.67 Q101.18,80.67 100.59,80.67 Q100.00,80.67 99.41,80.67 Q98.82,80.67 98.23,80.67 Q97.64,80.67 97.06,80.66 Q96.47,80.66 95.88,80.64 Q95.29,80.63 94.70,80.61 Q94.11,80.59 93.52,80.55 Q92.93,80.51 92.35,80.46 Q91.76,80.40 91.17,80.33 Q90.58,80.25 89.99,80.16 Q89.40,80.07 88.81,79.95 Q88.22,79.84 87.63,79.71 Q87.05,79.58 86.46,79.43 Q85.87,79.28 85.28,79.12 Q84.69,78.96 84.10,78.79 Q83.51,78.62 82.92,78.45 Q82.33,78.28 81.75,78.10 Q81.16,77.93 80.57,77.76 Q79.98,77.59 79.39,77.43 Q78.80,77.27 78.21,77.12 Q77.62,76.97 77.04,76.84 Q76.45,76.71 75.86,76.60 Q75.27,76.48 74.68,76.39 Q74.09,76.30 73.50,76.22 Q72.91,76.15 72.32,76.09 Q71.74,76.04 71.15,76.00 Q70.56,75.96 69.97,75.94 Q69.38,75.92 68.79,75.91 Q68.20,75.89 67.61,75.89 Q67.03,75.88 66.44,75.88 Q65.85,75.88 65.26,75.88 L64.67,75.88 Q31.71,82.54 28,115 Z";
+const BODY_ONDULATO_HOLE = "M64,96 A30,6 0 1,0 136,96 A30,6 0 1,0 64,96 Z";
 
 function shade(hex, amt) {
   const n = parseInt(hex.slice(1), 16);
@@ -45,10 +97,20 @@ function ClutchPreview({
   paillettesOn, paColor, strapOn, strapColor, ringColor, size = 260,
 }) {
   const dark = shade(color, -35);
-  const bodyPath = handleProfile === "dritto" ? BODY_DRITTO : BODY_ONDULATO;
-  const bodyD = hasHole
-    ? `${bodyPath} M56,85 A44,8 0 1,0 144,85 A44,8 0 1,0 56,85 Z`
-    : bodyPath;
+  const outerContour = handleProfile === "ondulato" ? BODY_ONDULATO_OUTER : BODY_DRITTO_OUTER;
+  const holePath = handleProfile === "ondulato" ? BODY_ONDULATO_HOLE : BODY_DRITTO_HOLE;
+  const bodyD = hasHole ? `${outerContour} ${holePath}` : outerContour;
+
+  // Ring attachment points for the optional crochet-handle accessory. The X
+  // positions are always the start/end of the top profile's horizontal run
+  // (where it meets the diagonal sides). The Y position depends on how the
+  // bag is carried: right on the upper edge when there's no hole (sottobraccio),
+  // or just below the hole when there is one (a mano) — same X, lower Y.
+  const topSpan = handleProfile === "ondulato" ? { x: 64.67, y: 75.88 } : { x: 70, y: 75 };
+  const holeBottomY = handleProfile === "ondulato" ? 103.2 : 93;
+  const ringY = hasHole ? holeBottomY + 4 : topSpan.y;
+  const leftRing = [topSpan.x, ringY];
+  const rightRing = [200 - topSpan.x, ringY];
 
   const seqPts = useMemo(() => {
     const pts = [];
@@ -83,23 +145,72 @@ function ClutchPreview({
           </pattern>
         </defs>
 
-        {/* optional crochet strap accessory: two rings + arced strap above the body */}
-        {strapOn && (
-          <>
-            <path d="M46,120 C30,70 60,30 100,26 C140,30 170,70 154,120" fill="none" stroke={shade(strapColor, -35)} strokeWidth="15" strokeLinecap="round" />
-            <path d="M46,120 C30,70 60,30 100,26 C140,30 170,70 154,120" fill="none" stroke="url(#strapribs)" strokeWidth="13" strokeLinecap="round" opacity="0.9" />
-            <circle cx="46" cy="120" r="7" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="3.5" />
-            <circle cx="154" cy="120" r="7" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="3.5" />
-          </>
-        )}
+        {/* optional crochet handle accessory: TWO parallel handles between the
+            same pair of rings, positioned per the a-mano/sottobraccio rule above */}
+        {strapOn && (() => {
+          const [lx, ly] = leftRing;
+          const [rx, ry] = rightRing;
+          const peakY = Math.min(ly, ry) - 50;
+          const handlePath = (peakOffset, spread) =>
+            `M${lx},${ly} C${lx - spread},${(ly + peakY) / 2 - 6} ${lx + spread * 0.3},${peakY + peakOffset} 100,${peakY + peakOffset} ` +
+            `C${rx - spread * 0.3},${peakY + peakOffset} ${rx + spread},${(ry + peakY) / 2 - 6} ${rx},${ry}`;
+          const outerHandle = handlePath(0, 26);
+          const innerHandle = handlePath(9, 18);
+          return (
+            <>
+              <path d={outerHandle} fill="none" stroke={shade(strapColor, -35)} strokeWidth="15" strokeLinecap="round" />
+              <path d={outerHandle} fill="none" stroke="url(#strapribs)" strokeWidth="13" strokeLinecap="round" opacity="0.9" />
+              <path d={innerHandle} fill="none" stroke={shade(strapColor, -35)} strokeWidth="15" strokeLinecap="round" />
+              <path d={innerHandle} fill="none" stroke="url(#strapribs)" strokeWidth="13" strokeLinecap="round" opacity="0.9" />
+              <circle cx={lx} cy={ly} r="7" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="3.5" />
+              <circle cx={rx} cy={ry} r="7" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="3.5" />
+            </>
+          );
+        })()}
 
         {/* chain accessory */}
         {chainOn && (() => {
           const c = chainColor === "Argento" ? "#C7C7C7" : "#D9A94A";
-          const anchors = [[68, 90], [76, 88], [124, 88], [132, 90]];
-          return anchors.map(([ax, ay], ai) => {
+          // Right shoulder curve: "L172,115 Q168.29,82.54 135.33,75.88" — sample
+          // two close points further up it (not at the straight-side/curve
+          // junction, but where the curve's own slope has visibly shifted),
+          // with the exact tangent at each for a natural-looking attachment.
+          const P0 = [172, 115], P1 = [168.29, 82.54], P2 = [135.33, 75.88];
+          const quadPoint = (t) => [
+            (1 - t) ** 2 * P0[0] + 2 * (1 - t) * t * P1[0] + t ** 2 * P2[0],
+            (1 - t) ** 2 * P0[1] + 2 * (1 - t) * t * P1[1] + t ** 2 * P2[1],
+          ];
+          const quadTangent = (t) => {
+            const dx = 2 * (1 - t) * (P1[0] - P0[0]) + 2 * t * (P2[0] - P1[0]);
+            const dy = 2 * (1 - t) * (P1[1] - P0[1]) + 2 * t * (P2[1] - P1[1]);
+            const mag = Math.hypot(dx, dy);
+            return [dx / mag, dy / mag];
+          };
+          const ts = [0.35, 0.4];
+          const rightAnchors = ts.map((t) => ({ pt: quadPoint(t), dir: quadTangent(t) }));
+          const leftAnchors = ts.map((t) => {
+            const [x, y] = quadPoint(t);
+            const [dx, dy] = quadTangent(t);
+            return { pt: [200 - x, y], dir: [-dx, dy] };
+          });
+          const allAnchors = [...leftAnchors, ...rightAnchors];
+          const convergeY = 8;
+          return allAnchors.map(({ pt: [ax, ay], dir: [dx, dy] }, ai) => {
+            const isLeft = ax < 100;
+            const tangentLen = 34;
+            const c1 = [ax + dx * tangentLen, ay + dy * tangentLen];
+            // second control point: pulled outward for a gentle outward bulge
+            // before curving back in to the shared hand-hold point — a soft
+            // "S" instead of a straight run to the peak.
+            const bulgeX = isLeft ? -30 : 30;
+            const c2 = [100 + bulgeX, convergeY + 34];
+            const end = [100, convergeY];
             const pts = [];
-            for (let t = 0; t <= 1; t += 0.12) pts.push([ax + (100 - ax) * t, ay - t * 82]);
+            for (let t = 0; t <= 1; t += 0.05) {
+              const x = (1 - t) ** 3 * ax + 3 * (1 - t) ** 2 * t * c1[0] + 3 * (1 - t) * t ** 2 * c2[0] + t ** 3 * end[0];
+              const y = (1 - t) ** 3 * ay + 3 * (1 - t) ** 2 * t * c1[1] + 3 * (1 - t) * t ** 2 * c2[1] + t ** 3 * end[1];
+              pts.push([x, y]);
+            }
             return (
               <g key={ai}>
                 <circle cx={ax} cy={ay} r="3" fill="none" stroke={c} strokeWidth="1.3" />
@@ -126,7 +237,7 @@ export default function App() {
   const [stepIdx, setStepIdx] = useState(0);
 
   const [sizeId, setSizeId] = useState("media");
-  const [handleProfile, setHandleProfile] = useState("ondulato");
+  const [handleProfile, setHandleProfile] = useState("dritto");
   const [hasHole, setHasHole] = useState(true);
   const [color, setColor] = useState(YARN_COLORS[0].hex);
 
@@ -157,8 +268,8 @@ export default function App() {
   const summary = [
     `Modello: Clutch`,
     `Dimensione: ${size.name} (${size.cm} cm)`,
-    ...(sizeId === "grande" ? [`Profilo manico: ${handleProfile === "dritto" ? "Dritto" : "Ondulato"}`] : []),
-    `Apertura: ${hasHole ? "Con foro (a mano)" : "Senza foro (sottobraccio)"}`,
+    ...(sizeId === "grande" ? [`Profilo chiusura click clack: ${handleProfile === "dritto" ? "Quadrato" : "Ondulato"}`] : []),
+    `Chiusura click clack: ${hasHole ? "Sì (si porta a mano)" : "No (si porta sottobraccio)"}`,
     `Colore corpo: ${colorName}`,
     `Catenella: ${chainOn ? chainColor : "No"}`,
     `Paillettes: ${paillettesOn ? paColorName : "No"}`,
@@ -249,30 +360,30 @@ export default function App() {
             )}
 
             {currentStep === "profile" && (
-              <Section title="2. Profilo del manico (solo Grande)">
+              <Section title="2. Scegli il profilo della tua borsa">
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12 }}>
+                  <button className="opt" onClick={() => setHandleProfile("dritto")} style={optCardStyle(handleProfile === "dritto")}>
+                    <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Quadrato</div>
+                    <div style={{ fontSize: 13, opacity: 0.65 }}>Bordo lineare e netto</div>
+                  </button>
                   <button className="opt" onClick={() => setHandleProfile("ondulato")} style={optCardStyle(handleProfile === "ondulato")}>
                     <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Ondulato</div>
                     <div style={{ fontSize: 13, opacity: 0.65 }}>Bordo morbido e curvo</div>
-                  </button>
-                  <button className="opt" onClick={() => setHandleProfile("dritto")} style={optCardStyle(handleProfile === "dritto")}>
-                    <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Dritto</div>
-                    <div style={{ fontSize: 13, opacity: 0.65 }}>Bordo lineare e netto</div>
                   </button>
                 </div>
               </Section>
             )}
 
             {currentStep === "hole" && (
-              <Section title={`${sizeId === "grande" ? "3" : "2"}. Apertura per il manico`}>
+              <Section title={`${sizeId === "grande" ? "3" : "2"}. Come vorresti portare la tua clutch?`}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 12 }}>
                   <button className="opt" onClick={() => setHasHole(true)} style={optCardStyle(hasHole)}>
-                    <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Con foro</div>
-                    <div style={{ fontSize: 13, opacity: 0.65 }}>Si porta a mano</div>
+                    <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>A mano</div>
+                    <div style={{ fontSize: 13, opacity: 0.65 }}>Viene lasciato un foro per l'impugnatura</div>
                   </button>
                   <button className="opt" onClick={() => setHasHole(false)} style={optCardStyle(!hasHole)}>
-                    <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Senza foro</div>
-                    <div style={{ fontSize: 13, opacity: 0.65 }}>Si porta sottobraccio</div>
+                    <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Sottobraccio</div>
+                    <div style={{ fontSize: 13, opacity: 0.65 }}>Nessun foro per l'impugnatura</div>
                   </button>
                 </div>
               </Section>
