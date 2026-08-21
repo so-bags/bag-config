@@ -110,7 +110,7 @@ function shade(hex, amt) {
 function archRowPath(y, tileW, period, amp, phase) {
   let d = `M${phase - period},${y}`;
   for (let x = phase - period; x <= tileW + period; x += period) {
-    d += ` Q${x + period / 2},${y - amp} ${x + period},${y}`;
+    d += ` L${x + period / 2},${y - amp} L${x + period},${y}`;
   }
   return d;
 }
@@ -128,8 +128,8 @@ function StitchPattern({ id, base, rotate }) {
         const phase = row === 1 ? period / 2 : 0;
         return (
           <g key={row}>
-            <path d={archRowPath(y, period, period, 2.6, phase)} fill="none" stroke={dark} strokeWidth="6.6" strokeLinecap="round" />
-            <path d={archRowPath(y - 1.2, period, period, 2, phase)} fill="none" stroke={light} strokeWidth="2.4" strokeLinecap="round" opacity="0.5" />
+            <path d={archRowPath(y, period, period, 2.6, phase)} fill="none" stroke={dark} strokeWidth="6.6" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={archRowPath(y - 1.2, period, period, 2, phase)} fill="none" stroke={light} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
           </g>
         );
       })}
