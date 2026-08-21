@@ -141,7 +141,7 @@ function ClutchPreview({
   }, [holeBottomY]);
 
   return (
-    <svg viewBox="0 0 200 195" width={size} height={size * (195 / 200)} role="img" aria-label="Anteprima clutch">
+    <svg viewBox="0 0 200 195" width="100%" style={{ maxWidth: size, height: "auto", aspectRatio: "200 / 195", display: "block" }} role="img" aria-label="Anteprima clutch">
       <g transform={`translate(${100 - 100 * sizeScale},${195 - 195 * sizeScale}) scale(${sizeScale})`}>
         <defs>
           <pattern id="ribs" patternUnits="userSpaceOnUse" width="10" height="9">
@@ -313,7 +313,7 @@ export default function App() {
       strapOn={strapOn}
       strapColor={effectiveStrapColor}
       ringColor={ringColor}
-      size={230}
+      size={320}
     />
   );
 
@@ -333,7 +333,7 @@ export default function App() {
 
         .main-grid {
           display: grid;
-          grid-template-columns: minmax(220px, 300px) 1fr;
+          grid-template-columns: minmax(220px, 380px) 1fr;
           gap: 28px;
         }
         .preview-panel {
