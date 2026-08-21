@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import logoUrl from "./assets/logo.png";
 
 /* Paper #EFE7DA · Card #F8F3E8 · Ink #2B241F · Rosewood #B25B54 · Mustard #D6A24A · Teal #4C7A72 */
 
@@ -102,6 +103,40 @@ function shade(hex, amt) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+// A thick chain of connected bumps along one row, stacked tightly row on
+// row and phase-shifted by half a stitch — stands in for a row of crochet
+// stitches (worked flat, in strips of t-shirt yarn): a dense braided cord
+// rather than the flat stripe it replaces.
+function archRowPath(y, tileW, period, amp, phase) {
+  let d = `M${phase - period},${y}`;
+  for (let x = phase - period; x <= tileW + period; x += period) {
+    d += ` Q${x + period / 2},${y - amp} ${x + period},${y}`;
+  }
+  return d;
+}
+
+function StitchPattern({ id, base, rotate }) {
+  const dark = shade(base, -42);
+  const light = shade(base, 34);
+  const period = 8, rowH = 6.4;
+  return (
+    <pattern id={id} patternUnits="userSpaceOnUse" width={period} height={rowH * 2}
+      patternTransform={rotate ? `rotate(${rotate})` : undefined}>
+      <rect width={period} height={rowH * 2} fill={base} />
+      {[0, 1].map((row) => {
+        const y = rowH * (row + 1);
+        const phase = row === 1 ? period / 2 : 0;
+        return (
+          <g key={row}>
+            <path d={archRowPath(y, period, period, 2.6, phase)} fill="none" stroke={dark} strokeWidth="6.6" strokeLinecap="round" />
+            <path d={archRowPath(y - 1.2, period, period, 2, phase)} fill="none" stroke={light} strokeWidth="2.4" strokeLinecap="round" opacity="0.5" />
+          </g>
+        );
+      })}
+    </pattern>
+  );
+}
+
 function ClutchPreview({
   sizeScale, handleProfile, hasHole, color, chainOn, chainColor,
   paillettesOn, paColor, strapOn, strapColor, ringColor, size = 260,
@@ -144,14 +179,8 @@ function ClutchPreview({
     <svg viewBox="0 0 200 195" width="100%" style={{ maxWidth: size, height: "auto", aspectRatio: "200 / 195", display: "block" }} role="img" aria-label="Anteprima clutch">
       <g transform={`translate(${100 - 100 * sizeScale},${195 - 195 * sizeScale}) scale(${sizeScale})`}>
         <defs>
-          <pattern id="ribs" patternUnits="userSpaceOnUse" width="10" height="9">
-            <rect width="10" height="9" fill={color} />
-            <rect width="10" height="4" fill={dark} />
-          </pattern>
-          <pattern id="strapribs" patternUnits="userSpaceOnUse" width="10" height="9" patternTransform="rotate(90)">
-            <rect width="10" height="9" fill={strapColor} />
-            <rect width="10" height="4" fill={shade(strapColor, -35)} />
-          </pattern>
+          <StitchPattern id="ribs" base={color} />
+          <StitchPattern id="strapribs" base={strapColor} rotate={90} />
         </defs>
 
         {/* optional crochet handle accessory: TWO parallel handles between the
@@ -351,9 +380,7 @@ export default function App() {
       `}</style>
 
       <header style={{ padding: "32px 20px 16px", textAlign: "center", borderBottom: "1px solid #DCD1BB" }}>
-        <div className="display" style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase", color: "#B25B54", marginBottom: 6 }}>
-          Filo &amp; Forma
-        </div>
+        <img src={logoUrl} alt="So-Bags" style={{ height: 64, width: "auto", margin: "0 auto 14px", display: "block" }} />
         <h1 className="display" style={{ fontSize: 30, fontWeight: 700, margin: 0 }}>Configura la tua Clutch</h1>
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
           {steps.map((s, i) => (
@@ -423,10 +450,7 @@ export default function App() {
               <Section title={`${sizeId === "grande" ? "4" : "3"}. Colore del corpo`}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                   {YARN_COLORS.map((c) => (
-                    <button key={c.hex} className="swatch" onClick={() => setColor(c.hex)} title={c.name} style={{
-                      width: 38, height: 38, borderRadius: "50%", background: c.hex,
-                      border: color === c.hex ? "3px solid #2B241F" : "1px solid #00000022",
-                    }} />
+                    <ColorSwatch key={c.hex} hex={c.hex} name={c.name} size={38} selected={color === c.hex} onClick={() => setColor(c.hex)} />
                   ))}
                 </div>
               </Section>
@@ -445,10 +469,7 @@ export default function App() {
                 <AccessoryBlock title="Paillettes" on={paillettesOn} onToggle={setPaillettesOn}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {PAILLETTE_COLORS.map((c) => (
-                      <button key={c.hex} className="swatch" onClick={() => setPaColor(c.hex)} title={c.name} style={{
-                        width: 28, height: 28, borderRadius: "50%", background: c.hex,
-                        border: paColor === c.hex ? "3px solid #2B241F" : "1px solid #00000022",
-                      }} />
+                      <ColorSwatch key={c.hex} hex={c.hex} name={c.name} size={28} selected={paColor === c.hex} onClick={() => setPaColor(c.hex)} />
                     ))}
                   </div>
                 </AccessoryBlock>
@@ -458,19 +479,9 @@ export default function App() {
                     <div>
                       <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 6 }}>Colore del filato (default: come il corpo)</div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        <button
-                          onClick={() => setStrapColor(null)}
-                          style={{
-                            width: 28, height: 28, borderRadius: "50%", background: color,
-                            border: strapColor === null ? "3px solid #2B241F" : "1px solid #00000022",
-                          }}
-                          title="Come il corpo"
-                        />
+                        <ColorSwatch hex={color} name="Come il corpo" size={28} selected={strapColor === null} onClick={() => setStrapColor(null)} />
                         {YARN_COLORS.map((c) => (
-                          <button key={c.hex} className="swatch" onClick={() => setStrapColor(c.hex)} title={c.name} style={{
-                            width: 28, height: 28, borderRadius: "50%", background: c.hex,
-                            border: strapColor === c.hex ? "3px solid #2B241F" : "1px solid #00000022",
-                          }} />
+                          <ColorSwatch key={c.hex} hex={c.hex} name={c.name} size={28} selected={strapColor === c.hex} onClick={() => setStrapColor(c.hex)} />
                         ))}
                       </div>
                     </div>
@@ -558,6 +569,21 @@ function AccessoryBlock({ title, on, onToggle, children }) {
       </label>
       {on && <div style={{ marginTop: 12 }}>{children}</div>}
     </div>
+  );
+}
+
+function ColorSwatch({ hex, name, size = 38, selected, onClick }) {
+  return (
+    <button onClick={onClick} title={name} style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+      width: size + 20, background: "none", border: "none", padding: 0, cursor: "pointer",
+    }}>
+      <span className="swatch" style={{
+        width: size, height: size, borderRadius: "50%", background: hex, display: "block",
+        border: selected ? "3px solid #2B241F" : "1px solid #00000022",
+      }} />
+      <span style={{ fontSize: 11, opacity: 0.75, textAlign: "center", lineHeight: 1.25 }}>{name}</span>
+    </button>
   );
 }
 
