@@ -289,7 +289,7 @@ export default function App() {
     `Manico a uncinetto: ${strapOn ? `${strapColorName}, anelli ${ringColor}` : "No"}`,
   ];
 
-  const waNumber = "39XXXXXXXXXX"; // <-- sostituisci con il numero WhatsApp del negozio
+  const waNumber = "393519221704"; // <-- sostituisci con il numero WhatsApp del negozio
   const waText = encodeURIComponent(`Ciao! Vorrei ordinare questa clutch personalizzata:\n${summary.join("\n")}`);
   const [copied, setCopied] = useState(false);
   const copySummary = async () => {
