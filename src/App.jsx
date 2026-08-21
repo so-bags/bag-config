@@ -53,9 +53,19 @@ const YARN_COLORS = [
 ];
 
 const PAILLETTE_COLORS = [
-  { name: "Oro", hex: "#D9A94A" },
-  { name: "Argento", hex: "#C7C7C7" },
-  { name: "Rame", hex: "#B5651D" },
+  { name: "Bianco Holo", hex: "#B8DCF3" },
+  { name: "Nero", hex: "#161616" },
+  { name: "Bronzo", hex: "#8A4E27" },
+  { name: "Fucsia", hex: "#CD58A6" },
+  { name: "Verde Oliva", hex: "#90B273" },
+  { name: "Argento", hex: "#C9CBC9" },
+  { name: "Oro", hex: "#9F9D82" },
+  { name: "Blu", hex: "#1C305A" },
+  { name: "Rose Gold", hex: "#9B5E2D" },
+  { name: "Oro Giallo", hex: "#AD7D30" },
+  { name: "Azzurro", hex: "#199CAF" },
+  { name: "Rosa", hex: "#A6939C" },
+  { name: "Ciliegia", hex: "#CC2346" },
 ];
 
 const METAL_COLORS = [
@@ -114,14 +124,13 @@ function ClutchPreview({
 
   const seqPts = useMemo(() => {
     const pts = [];
-    const area = { x0: 30, x1: 170, y0: 115, y1: 169 };
-    const rows = 6, cols = 7;
+    const area = { x0: 30, x1: 170, y0: holeBottomY + 6, y1: 169 };
+    const rows = 4, cols = 7;
     const rowH = (area.y1 - area.y0) / rows;
     const colW = (area.x1 - area.x0) / cols;
     for (let r = 0; r < rows; r++) {
-      if (r % 2 === 1) continue;
       const y = area.y0 + rowH * (r + 0.5);
-      const stagger = (r / 2) % 2 === 1 ? colW / 2 : 0;
+      const stagger = r % 2 === 1 ? colW / 2 : 0;
       for (let c = 0; c < cols; c++) {
         const x = area.x0 + stagger + colW * (c + 0.5);
         if (x > area.x1 - colW * 0.2) continue;
@@ -129,7 +138,7 @@ function ClutchPreview({
       }
     }
     return pts;
-  }, []);
+  }, [holeBottomY]);
 
   return (
     <svg viewBox="0 0 200 195" width={size} height={size * (195 / 200)} role="img" aria-label="Anteprima clutch">
@@ -150,18 +159,22 @@ function ClutchPreview({
         {strapOn && (() => {
           const [lx, ly] = leftRing;
           const [rx, ry] = rightRing;
-          const peakY = Math.min(ly, ry) - 50;
-          const handlePath = (peakOffset, spread) =>
-            `M${lx},${ly} C${lx - spread},${(ly + peakY) / 2 - 6} ${lx + spread * 0.3},${peakY + peakOffset} 100,${peakY + peakOffset} ` +
-            `C${rx - spread * 0.3},${peakY + peakOffset} ${rx + spread},${(ry + peakY) / 2 - 6} ${rx},${ry}`;
-          const outerHandle = handlePath(0, 26);
-          const innerHandle = handlePath(9, 18);
+          const peakY = Math.min(ly, ry) - 68;
+          // Same shape/size for both — shifted a few units apart horizontally
+          // (like two real handles side by side), not nested at different sizes.
+          const handlePath = (xShift) => {
+            const l = [lx + xShift, ly], r = [rx + xShift, ry], mid = 100 + xShift, spread = 28;
+            return `M${l[0]},${l[1]} C${l[0] - spread},${(l[1] + peakY) / 2 - 6} ${l[0] + spread * 0.3},${peakY} ${mid},${peakY} ` +
+              `C${r[0] - spread * 0.3},${peakY} ${r[0] + spread},${(r[1] + peakY) / 2 - 6} ${r[0]},${r[1]}`;
+          };
+          const outerHandle = handlePath(-4);
+          const innerHandle = handlePath(4);
           return (
             <>
-              <path d={outerHandle} fill="none" stroke={shade(strapColor, -35)} strokeWidth="15" strokeLinecap="round" />
-              <path d={outerHandle} fill="none" stroke="url(#strapribs)" strokeWidth="13" strokeLinecap="round" opacity="0.9" />
-              <path d={innerHandle} fill="none" stroke={shade(strapColor, -35)} strokeWidth="15" strokeLinecap="round" />
-              <path d={innerHandle} fill="none" stroke="url(#strapribs)" strokeWidth="13" strokeLinecap="round" opacity="0.9" />
+              <path d={outerHandle} fill="none" stroke={shade(strapColor, -35)} strokeWidth="7" strokeLinecap="round" />
+              <path d={outerHandle} fill="none" stroke="url(#strapribs)" strokeWidth="5.5" strokeLinecap="round" opacity="0.9" />
+              <path d={innerHandle} fill="none" stroke={shade(strapColor, -35)} strokeWidth="7" strokeLinecap="round" />
+              <path d={innerHandle} fill="none" stroke="url(#strapribs)" strokeWidth="5.5" strokeLinecap="round" opacity="0.9" />
               <circle cx={lx} cy={ly} r="7" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="3.5" />
               <circle cx={rx} cy={ry} r="7" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="3.5" />
             </>
@@ -225,7 +238,7 @@ function ClutchPreview({
         <path d={bodyD} fill="none" stroke={dark} strokeWidth="2" fillRule="evenodd" />
 
         {paillettesOn && seqPts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3.4" fill={paColor} stroke="#00000022" strokeWidth="0.4" />
+          <circle key={i} cx={p.x} cy={p.y} r="7.4" fill={paColor} stroke="#00000022" strokeWidth="0.4" />
         ))}
       </g>
     </svg>
@@ -276,7 +289,7 @@ export default function App() {
     `Manico a uncinetto: ${strapOn ? `${strapColorName}, anelli ${ringColor}` : "No"}`,
   ];
 
-  const waNumber = "393519221704"; // <-- sostituisci con il numero WhatsApp del negozio
+  const waNumber = "39XXXXXXXXXX"; // <-- sostituisci con il numero WhatsApp del negozio
   const waText = encodeURIComponent(`Ciao! Vorrei ordinare questa clutch personalizzata:\n${summary.join("\n")}`);
   const [copied, setCopied] = useState(false);
   const copySummary = async () => {
@@ -317,6 +330,24 @@ export default function App() {
         .swatch:hover { transform: scale(1.12); }
         .opt { transition: box-shadow .15s ease, transform .15s ease; }
         .opt:hover { transform: translateY(-2px); }
+
+        .main-grid {
+          display: grid;
+          grid-template-columns: minmax(220px, 300px) 1fr;
+          gap: 28px;
+        }
+        .preview-panel {
+          position: sticky;
+          top: 20px;
+          height: fit-content;
+        }
+        @media (max-width: 680px) {
+          .main-grid { grid-template-columns: 1fr; gap: 18px; }
+          .preview-panel { position: static; top: auto; }
+        }
+        @media (max-width: 420px) {
+          h1.display { font-size: 24px !important; }
+        }
       `}</style>
 
       <header style={{ padding: "32px 20px 16px", textAlign: "center", borderBottom: "1px solid #DCD1BB" }}>
@@ -324,7 +355,7 @@ export default function App() {
           Filo &amp; Forma
         </div>
         <h1 className="display" style={{ fontSize: 30, fontWeight: 700, margin: 0 }}>Configura la tua Clutch</h1>
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
           {steps.map((s, i) => (
             <div key={s} style={{
               width: i === stepPos ? 22 : 8, height: 8, borderRadius: 999,
@@ -334,12 +365,11 @@ export default function App() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 60px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 300px) 1fr", gap: 28 }}>
-          <div style={{
+      <main style={{ maxWidth: 920, margin: "0 auto", padding: "28px 16px 60px" }}>
+        <div className="main-grid">
+          <div className="preview-panel" style={{
             background: "#F8F3E8", border: "1px solid #DCD1BB", borderRadius: 16, padding: 20,
             display: "flex", flexDirection: "column", alignItems: "center",
-            position: "sticky", top: 20, height: "fit-content",
           }}>
             {preview}
             <div className="display" style={{ fontSize: 15, opacity: 0.7, marginTop: 6 }}>{size.name} · {size.cm} cm</div>
