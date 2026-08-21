@@ -443,7 +443,7 @@ export default function App() {
                 </AccessoryBlock>
 
                 <AccessoryBlock title="Paillettes" on={paillettesOn} onToggle={setPaillettesOn}>
-                  <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {PAILLETTE_COLORS.map((c) => (
                       <button key={c.hex} className="swatch" onClick={() => setPaColor(c.hex)} title={c.name} style={{
                         width: 28, height: 28, borderRadius: "50%", background: c.hex,
@@ -563,7 +563,7 @@ function AccessoryBlock({ title, on, onToggle, children }) {
 
 function SwatchRow({ options, value, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {options.map((o) => (
         <button key={o.hex} onClick={() => onChange(o.name)} style={{
           padding: "7px 14px", borderRadius: 999, fontSize: 13,
