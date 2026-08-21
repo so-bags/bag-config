@@ -290,11 +290,12 @@ export default function App() {
   const [paColor, setPaColor] = useState(PAILLETTE_COLORS[0].hex);
 
   const [strapOn, setStrapOn] = useState(false);
-  const [strapColor, setStrapColor] = useState(null); // null = same as body
+  const [strapColorDiffers, setStrapColorDiffers] = useState(false); // false = same as body (the common case)
+  const [strapColor, setStrapColor] = useState(null);
   const [ringColor, setRingColor] = useState("Oro");
 
   const size = SIZES.find((s) => s.id === sizeId);
-  const effectiveStrapColor = strapColor || color;
+  const effectiveStrapColor = (strapColorDiffers && strapColor) || color;
 
   const steps = STEP_IDS.filter((id) => id !== "profile" || sizeId === "grande");
   const currentStep = steps[stepIdx] || steps[steps.length - 1];
@@ -305,7 +306,7 @@ export default function App() {
 
   const colorName = YARN_COLORS.find((c) => c.hex === color)?.name ?? color;
   const paColorName = PAILLETTE_COLORS.find((c) => c.hex === paColor)?.name ?? "";
-  const strapColorName = strapColor ? (YARN_COLORS.find((c) => c.hex === strapColor)?.name ?? "") : `${colorName} (come il corpo)`;
+  const strapColorName = (strapColorDiffers && strapColor) ? (YARN_COLORS.find((c) => c.hex === strapColor)?.name ?? "") : `${colorName} (come il corpo)`;
 
   const summary = [
     `Modello: Clutch`,
@@ -477,13 +478,20 @@ export default function App() {
                 <AccessoryBlock title="Manico fatto a uncinetto" on={strapOn} onToggle={setStrapOn}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div>
-                      <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 6 }}>Colore del filato (default: come il corpo)</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        <ColorSwatch hex={color} name="Come il corpo" size={28} selected={strapColor === null} onClick={() => setStrapColor(null)} />
-                        {YARN_COLORS.map((c) => (
-                          <ColorSwatch key={c.hex} hex={c.hex} name={c.name} size={28} selected={strapColor === c.hex} onClick={() => setStrapColor(c.hex)} />
-                        ))}
+                      <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>
+                        Il colore dei manici, se non diversamente specificato, coincide con quello del corpo della borsa.
                       </div>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                        <input type="checkbox" checked={strapColorDiffers} onChange={(e) => setStrapColorDiffers(e.target.checked)} />
+                        Voglio un colore del filato diverso dal corpo
+                      </label>
+                      {strapColorDiffers && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                          {YARN_COLORS.map((c) => (
+                            <ColorSwatch key={c.hex} hex={c.hex} name={c.name} size={28} selected={strapColor === c.hex} onClick={() => setStrapColor(c.hex)} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 6 }}>Colore anelli di aggancio</div>
