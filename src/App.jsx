@@ -80,6 +80,18 @@ const SIZES = [
   { id: "grande", name: "Grande", cm: 22, scale: 1.0 },
 ];
 
+const MODELS = [
+  { id: "clutch", name: "Clutch" },
+  { id: "borsetta", name: "Borsetta" },
+];
+
+// Only two sizes for the Borsetta (no "Media"). Scale is proportional to
+// width, "Grande" as the 1.0 reference — same convention SIZES uses above.
+const BORSETTA_SIZES = [
+  { id: "piccola", name: "Piccola", cm: "18×15", scale: 18 / 25 },
+  { id: "grande", name: "Grande", cm: "25×18", scale: 1 },
+];
+
 // The frame ("chiusura click clack"), once covered in yarn, coincides with
 // the bag's own top edge — it isn't a separate piece rising above the body.
 // Two full silhouettes (outer edge including the frame's outline, plus an
@@ -95,6 +107,70 @@ const BODY_DRITTO_HOLE = "M60,85 A40,8 0 1,0 140,85 A40,8 0 1,0 60,85 Z";
 
 const BODY_ONDULATO_OUTER = "M20,153 Q17,171 42,173 L158,173 Q183,171 180,153 L172,115 Q168.29,82.54 135.33,75.88 Q134.15,75.88 133.56,75.88 Q132.97,75.88 132.39,75.89 Q131.80,75.89 131.21,75.91 Q130.62,75.92 130.03,75.94 Q129.44,75.96 128.85,76.00 Q128.26,76.04 127.68,76.09 Q127.09,76.15 126.50,76.22 Q125.91,76.30 125.32,76.39 Q124.73,76.48 124.14,76.60 Q123.55,76.71 122.96,76.84 Q122.38,76.97 121.79,77.12 Q121.20,77.27 120.61,77.43 Q120.02,77.59 119.43,77.76 Q118.84,77.93 118.25,78.10 Q117.67,78.28 117.08,78.45 Q116.49,78.62 115.90,78.79 Q115.31,78.96 114.72,79.12 Q114.13,79.28 113.54,79.43 Q112.95,79.58 112.37,79.71 Q111.78,79.84 111.19,79.95 Q110.60,80.07 110.01,80.16 Q109.42,80.25 108.83,80.33 Q108.24,80.40 107.65,80.46 Q107.07,80.51 106.48,80.55 Q105.89,80.59 105.30,80.61 Q104.71,80.63 104.12,80.64 Q103.53,80.66 102.94,80.66 Q102.36,80.67 101.77,80.67 Q101.18,80.67 100.59,80.67 Q100.00,80.67 99.41,80.67 Q98.82,80.67 98.23,80.67 Q97.64,80.67 97.06,80.66 Q96.47,80.66 95.88,80.64 Q95.29,80.63 94.70,80.61 Q94.11,80.59 93.52,80.55 Q92.93,80.51 92.35,80.46 Q91.76,80.40 91.17,80.33 Q90.58,80.25 89.99,80.16 Q89.40,80.07 88.81,79.95 Q88.22,79.84 87.63,79.71 Q87.05,79.58 86.46,79.43 Q85.87,79.28 85.28,79.12 Q84.69,78.96 84.10,78.79 Q83.51,78.62 82.92,78.45 Q82.33,78.28 81.75,78.10 Q81.16,77.93 80.57,77.76 Q79.98,77.59 79.39,77.43 Q78.80,77.27 78.21,77.12 Q77.62,76.97 77.04,76.84 Q76.45,76.71 75.86,76.60 Q75.27,76.48 74.68,76.39 Q74.09,76.30 73.50,76.22 Q72.91,76.15 72.32,76.09 Q71.74,76.04 71.15,76.00 Q70.56,75.96 69.97,75.94 Q69.38,75.92 68.79,75.91 Q68.20,75.89 67.61,75.89 Q67.03,75.88 66.44,75.88 Q65.85,75.88 65.26,75.88 L64.67,75.88 Q31.71,82.54 28,115 Z";
 const BODY_ONDULATO_HOLE = "M64,96 A30,6 0 1,0 136,96 A30,6 0 1,0 64,96 Z";
+
+function roundedRectPath(x, y, w, h, r) {
+  return `M${x + r},${y} H${x + w - r} A${r},${r} 0 0 1 ${x + w},${y + r} V${y + h - r} A${r},${r} 0 0 1 ${x + w - r},${y + h} H${x + r} A${r},${r} 0 0 1 ${x},${y + h - r} V${y + r} A${r},${r} 0 0 1 ${x + r},${y} Z`;
+}
+
+function ellipsePath(cx, cy, rx, ry) {
+  return `M${cx - rx},${cy} A${rx},${ry} 0 1 0 ${cx + rx},${cy} A${rx},${ry} 0 1 0 ${cx - rx},${cy} Z`;
+}
+
+function cubicPoint(p0, c1, c2, p1, t) {
+  const mt = 1 - t;
+  return [
+    mt ** 3 * p0[0] + 3 * mt ** 2 * t * c1[0] + 3 * mt * t ** 2 * c2[0] + t ** 3 * p1[0],
+    mt ** 3 * p0[1] + 3 * mt ** 2 * t * c1[1] + 3 * mt * t ** 2 * c2[1] + t ** 3 * p1[1],
+  ];
+}
+
+// A soft, wavy path (two gentle crests with a shallow dip between) from one
+// point to another — the shape a long, flexible cord naturally falls into
+// with slack, rather than a short taut arc. A real ~1m handle/chain can't be
+// drawn to literal scale on a bag icon; this reads as "long and flexible,
+// coiled to fit the frame" instead.
+function softStrapSegments([x0, y0], [x1, y1], { peakY, dipY, spread }) {
+  const midX = (x0 + x1) / 2;
+  const c1x = x0 + (midX - x0) * 0.55;
+  const c2x = midX + (x1 - midX) * 0.45;
+  const crest1 = [c1x, peakY], dip = [midX, dipY], crest2 = [c2x, peakY];
+  return [
+    { p0: [x0, y0], c1: [x0 - spread * 0.2, (y0 + peakY) / 2], c2: [c1x - spread, peakY], p1: crest1 },
+    { p0: crest1, c1: [c1x + spread, peakY], c2: [midX - spread * 0.7, dipY], p1: dip },
+    { p0: dip, c1: [midX + spread * 0.7, dipY], c2: [c2x - spread, peakY], p1: crest2 },
+    { p0: crest2, c1: [c2x + spread, peakY], c2: [x1 + spread * 0.2, (y1 + peakY) / 2], p1: [x1, y1] },
+  ];
+}
+
+function segmentsToPath(segments) {
+  const p0 = segments[0].p0;
+  return `M${p0[0]},${p0[1]} ` + segments.map((s) => `C${s.c1[0]},${s.c1[1]} ${s.c2[0]},${s.c2[1]} ${s.p1[0]},${s.p1[1]}`).join(" ");
+}
+
+function sampleSegments(segments, stepsPerSeg) {
+  const pts = [];
+  segments.forEach((s, i) => {
+    for (let step = i === 0 ? 0 : 1; step <= stepsPerSeg; step++) {
+      pts.push(cubicPoint(s.p0, s.c1, s.c2, s.p1, step / stepsPerSeg));
+    }
+  });
+  return pts;
+}
+
+// Borsetta body: a flat rounded-rectangle panel (unlike the Clutch's curved
+// frame silhouette) with a hand-hole always cut near the top — there's no
+// "a mano / sottobraccio" choice for this model, the hole is fixed. Its two
+// widest points double as the attachment anchors for both the chain and the
+// single crochet handle, per the real bag's construction.
+// Body sits lower in its own viewBox (y starts at 62, not near the top) to
+// leave headroom above for a tall handle arc — see BORSETTA_VB_H below.
+const BORSETTA_VB_H = 190;
+const BORSETTA_BODY = { x: 22, y: 62, w: 156, h: 110, r: 16 };
+const BORSETTA_HOLE = { cx: 100, cy: 82, rx: 48, ry: 13 };
+// Chain and handle both anchor at the top corners of the body (just past
+// where the corner curve straightens out), not at the ends of the hole.
+const BORSETTA_ANCHOR_L = [BORSETTA_BODY.x + BORSETTA_BODY.r + 4, BORSETTA_BODY.y];
+const BORSETTA_ANCHOR_R = [BORSETTA_BODY.x + BORSETTA_BODY.w - BORSETTA_BODY.r - 4, BORSETTA_BODY.y];
 
 function shade(hex, amt) {
   const n = parseInt(hex.slice(1), 16);
@@ -274,10 +350,114 @@ function ClutchPreview({
   );
 }
 
+function BorsettaPreview({
+  sizeScale, color, chainOn, chainColor,
+  paillettesOn, paColor, strapOn, strapColor, ringColor, size = 260,
+}) {
+  const dark = shade(color, -35);
+  const { x, y, w, h, r } = BORSETTA_BODY;
+  const { cx: hcx, cy: hcy, rx: hrx, ry: hry } = BORSETTA_HOLE;
+  const bodyD = `${roundedRectPath(x, y, w, h, r)} ${ellipsePath(hcx, hcy, hrx, hry)}`;
+
+  const seqPts = useMemo(() => {
+    const pts = [];
+    const area = { x0: x + 14, x1: x + w - 14, y0: hcy + hry + 10, y1: y + h - 8 };
+    const rows = 3, cols = 7;
+    const rowH = (area.y1 - area.y0) / rows;
+    const colW = (area.x1 - area.x0) / cols;
+    for (let row = 0; row < rows; row++) {
+      const py = area.y0 + rowH * (row + 0.5);
+      const stagger = row % 2 === 1 ? colW / 2 : 0;
+      for (let c = 0; c < cols; c++) {
+        const px = area.x0 + stagger + colW * (c + 0.5);
+        if (px > area.x1 - colW * 0.2) continue;
+        pts.push({ x: px, y: py });
+      }
+    }
+    return pts;
+  }, [x, w, y, h, hcy, hry]);
+
+  return (
+    <svg viewBox={`0 0 200 ${BORSETTA_VB_H}`} width="100%" style={{ maxWidth: size, height: "auto", aspectRatio: `200 / ${BORSETTA_VB_H}`, display: "block" }} role="img" aria-label="Anteprima borsetta">
+      <g transform={`translate(${100 - 100 * sizeScale},${BORSETTA_VB_H - BORSETTA_VB_H * sizeScale}) scale(${sizeScale})`}>
+        <defs>
+          <StitchPattern id="borsa-ribs" base={color} />
+          <StitchPattern id="borsa-strapribs" base={strapColor} rotate={90} />
+        </defs>
+
+        {/* single crochet handle: a real ~2cm-thick, ~80cm-long cord — far too
+            long to draw to scale on a bag this size. It rises from the left
+            anchor, over a soft rounded dome (like a hood) to the right
+            anchor, and — instead of stopping there — keeps going past it as
+            a loose dangling tail alongside the body: the excess length reads
+            as a soft hanging drape, not drawn out in full or hidden away. */}
+        {strapOn && (() => {
+          const [lx, ly] = BORSETTA_ANCHOR_L;
+          const [rx, ry] = BORSETTA_ANCHOR_R;
+          const peakY = y - 55;
+          const spread = 34;
+          // Tail: reaches out and slightly up first (continuing the dome's
+          // own rightward sweep, not immediately curving down close to the
+          // body), then drops more steeply to its loose end, further out.
+          const reachC1 = [rx + 20, ry - 14];
+          const reachC2 = [rx + 28, ry - 4];
+          const reachEnd = [rx + 30, ry + 16];
+          const dropC1 = [rx + 35, ry + 50];
+          const dropC2 = [rx + 22, ry + 76];
+          const dropEnd = [rx + 14, ry + 96];
+          const handlePath =
+            `M${lx},${ly} C${lx - spread},${(ly + peakY) / 2} ${100 - spread * 0.3},${peakY} 100,${peakY} ` +
+            `C${100 + spread * 0.3},${peakY} ${rx + spread},${(ry + peakY) / 2} ${rx},${ry} ` +
+            `C${reachC1[0]},${reachC1[1]} ${reachC2[0]},${reachC2[1]} ${reachEnd[0]},${reachEnd[1]} ` +
+            `C${dropC1[0]},${dropC1[1]} ${dropC2[0]},${dropC2[1]} ${dropEnd[0]},${dropEnd[1]}`;
+          // Thickness matches a real ~2cm cord relative to the body's real
+          // width (~25cm for "Grande"), not the earlier thinner guess.
+          return (
+            <>
+              <path d={handlePath} fill="none" stroke={shade(strapColor, -35)} strokeWidth="12.5" strokeLinecap="round" />
+              <path d={handlePath} fill="none" stroke="url(#borsa-strapribs)" strokeWidth="10.5" strokeLinecap="round" opacity="0.9" />
+              <circle cx={lx} cy={ly} r="8.5" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="4" />
+              <circle cx={rx} cy={ry} r="8.5" fill="none" stroke={ringColor === "Argento" ? "#C7C7C7" : "#D9A94A"} strokeWidth="4" />
+            </>
+          );
+        })()}
+
+        {/* chain, anchored at the SAME two points as the handle above — each
+            side gets its own soft wave down to the shared hand-hold point at
+            top center, for the same "long flexible cord" reason as the handle */}
+        {chainOn && (() => {
+          const c = chainColor === "Argento" ? "#C7C7C7" : "#D9A94A";
+          const convergeY = 6;
+          const anchors = [BORSETTA_ANCHOR_L, BORSETTA_ANCHOR_R];
+          return anchors.map((anchor, ai) => {
+            const segs = softStrapSegments(anchor, [100, convergeY], { peakY: 2, dipY: 34, spread: 18 });
+            const pts = sampleSegments(segs, 10);
+            return (
+              <g key={ai}>
+                <circle cx={anchor[0]} cy={anchor[1]} r="3" fill="none" stroke={c} strokeWidth="1.3" />
+                {pts.map(([px, py], i) => <ellipse key={i} cx={px} cy={py} rx="2.3" ry="1.5" fill="none" stroke={c} strokeWidth="1.1" />)}
+              </g>
+            );
+          });
+        })()}
+
+        <path d={bodyD} fill={dark} fillRule="evenodd" />
+        <path d={bodyD} fill="url(#borsa-ribs)" fillRule="evenodd" opacity="0.95" />
+        <path d={bodyD} fill="none" stroke={dark} strokeWidth="2" fillRule="evenodd" />
+
+        {paillettesOn && seqPts.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="7" fill={paColor} stroke="#00000022" strokeWidth="0.4" />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 export default function App() {
-  const STEP_IDS = ["size", "profile", "hole", "color", "accessories", "summary"];
+  const STEP_IDS = ["model", "size", "profile", "hole", "color", "accessories", "summary"];
   const [stepIdx, setStepIdx] = useState(0);
 
+  const [model, setModel] = useState("clutch");
   const [sizeId, setSizeId] = useState("media");
   const [handleProfile, setHandleProfile] = useState("dritto");
   const [hasHole, setHasHole] = useState(true);
@@ -294,25 +474,40 @@ export default function App() {
   const [strapColor, setStrapColor] = useState(null);
   const [ringColor, setRingColor] = useState("Oro");
 
-  const size = SIZES.find((s) => s.id === sizeId);
+  const isBorsetta = model === "borsetta";
+  const currentSizes = isBorsetta ? BORSETTA_SIZES : SIZES;
+  const size = currentSizes.find((s) => s.id === sizeId) || currentSizes[0];
   const effectiveStrapColor = (strapColorDiffers && strapColor) || color;
 
-  const steps = STEP_IDS.filter((id) => id !== "profile" || sizeId === "grande");
+  const selectModel = (id) => {
+    setModel(id);
+    setSizeId(id === "borsetta" ? "piccola" : "media");
+  };
+
+  // Profile/hole only apply to the Clutch — the Borsetta's hand-hole is
+  // fixed (always there, never configurable), so it skips both steps.
+  const steps = STEP_IDS.filter((id) => {
+    if (id === "profile") return !isBorsetta && sizeId === "grande";
+    if (id === "hole") return !isBorsetta;
+    return true;
+  });
   const currentStep = steps[stepIdx] || steps[steps.length - 1];
   const stepPos = steps.indexOf(currentStep);
+  const stepNum = (id) => steps.indexOf(id) + 1;
 
   const goNext = () => setStepIdx((i) => Math.min(steps.length - 1, i + 1));
   const goBack = () => setStepIdx((i) => Math.max(0, i - 1));
 
+  const modelName = isBorsetta ? "Borsetta" : "Clutch";
   const colorName = YARN_COLORS.find((c) => c.hex === color)?.name ?? color;
   const paColorName = PAILLETTE_COLORS.find((c) => c.hex === paColor)?.name ?? "";
   const strapColorName = (strapColorDiffers && strapColor) ? (YARN_COLORS.find((c) => c.hex === strapColor)?.name ?? "") : `${colorName} (come il corpo)`;
 
   const summary = [
-    `Modello: Clutch`,
+    `Modello: ${modelName}`,
     `Dimensione: ${size.name} (${size.cm} cm)`,
-    ...(sizeId === "grande" ? [`Profilo chiusura click clack: ${handleProfile === "dritto" ? "Quadrato" : "Ondulato"}`] : []),
-    `Chiusura click clack: ${hasHole ? "Sì (si porta a mano)" : "No (si porta sottobraccio)"}`,
+    ...(!isBorsetta && sizeId === "grande" ? [`Profilo chiusura click clack: ${handleProfile === "dritto" ? "Quadrato" : "Ondulato"}`] : []),
+    ...(!isBorsetta ? [`Chiusura click clack: ${hasHole ? "Sì (si porta a mano)" : "No (si porta sottobraccio)"}`] : []),
     `Colore corpo: ${colorName}`,
     `Catenella: ${chainOn ? chainColor : "No"}`,
     `Paillettes: ${paillettesOn ? paColorName : "No"}`,
@@ -320,7 +515,7 @@ export default function App() {
   ];
 
   const waNumber = "393519221704"; // <-- sostituisci con il numero WhatsApp del negozio
-  const waText = encodeURIComponent(`Ciao! Vorrei ordinare questa clutch personalizzata:\n${summary.join("\n")}`);
+  const waText = encodeURIComponent(`Ciao! Vorrei ordinare questa ${modelName.toLowerCase()} personalizzata:\n${summary.join("\n")}`);
   const [copied, setCopied] = useState(false);
   const copySummary = async () => {
     try {
@@ -330,7 +525,20 @@ export default function App() {
     } catch (e) {}
   };
 
-  const preview = (
+  const preview = isBorsetta ? (
+    <BorsettaPreview
+      sizeScale={size.scale}
+      color={color}
+      chainOn={chainOn}
+      chainColor={chainColor}
+      paillettesOn={paillettesOn}
+      paColor={paColor}
+      strapOn={strapOn}
+      strapColor={effectiveStrapColor}
+      ringColor={ringColor}
+      size={320}
+    />
+  ) : (
     <ClutchPreview
       sizeScale={size.scale}
       handleProfile={handleProfile}
@@ -382,7 +590,7 @@ export default function App() {
 
       <header style={{ padding: "32px 20px 16px", textAlign: "center", borderBottom: "1px solid #DCD1BB" }}>
         <img src={logoUrl} alt="So-Bags" style={{ height: 64, width: "auto", margin: "0 auto 14px", display: "block" }} />
-        <h1 className="display" style={{ fontSize: 30, fontWeight: 700, margin: 0 }}>Configura la tua Clutch</h1>
+        <h1 className="display" style={{ fontSize: 30, fontWeight: 700, margin: 0 }}>Configura la tua {modelName}</h1>
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
           {steps.map((s, i) => (
             <div key={s} style={{
@@ -394,20 +602,48 @@ export default function App() {
       </header>
 
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "28px 16px 60px" }}>
-        <div className="main-grid">
-          <div className="preview-panel" style={{
-            background: "#F8F3E8", border: "1px solid #DCD1BB", borderRadius: 16, padding: 20,
-            display: "flex", flexDirection: "column", alignItems: "center",
-          }}>
-            {preview}
-            <div className="display" style={{ fontSize: 15, opacity: 0.7, marginTop: 6 }}>{size.name} · {size.cm} cm</div>
-          </div>
+        {/* The model-picker cards already show a 2D preview + name each — the
+            big shared preview panel would just repeat that, so it's skipped
+            on this one step. */}
+        <div className="main-grid" style={currentStep === "model" ? { gridTemplateColumns: "1fr" } : undefined}>
+          {currentStep !== "model" && (
+            <div className="preview-panel" style={{
+              background: "#F8F3E8", border: "1px solid #DCD1BB", borderRadius: 16, padding: 20,
+              display: "flex", flexDirection: "column", alignItems: "center",
+            }}>
+              {preview}
+              <div className="display" style={{ fontSize: 15, opacity: 0.7, marginTop: 6 }}>{size.name} · {size.cm} cm</div>
+            </div>
+          )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 22, minHeight: 320 }}>
-            {currentStep === "size" && (
-              <Section title="1. Scegli la dimensione">
+            {currentStep === "model" && (
+              <Section title={`${stepNum("model")}. Che modello vuoi configurare?`}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12 }}>
-                  {SIZES.map((s) => (
+                  {MODELS.map((m) => (
+                    <button key={m.id} className="opt" onClick={() => selectModel(m.id)} style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+                      background: "#F8F3E8", borderRadius: 12, padding: "18px 12px",
+                      border: model === m.id ? "2px solid #2B241F" : "1px solid #DCD1BB",
+                    }}>
+                      {m.id === "borsetta" ? (
+                        <BorsettaPreview sizeScale={1} color={color} chainOn={false} chainColor={chainColor}
+                          paillettesOn={false} paColor={paColor} strapOn={false} strapColor={color} ringColor={ringColor} size={140} />
+                      ) : (
+                        <ClutchPreview sizeScale={1} handleProfile="dritto" hasHole={true} color={color} chainOn={false} chainColor={chainColor}
+                          paillettesOn={false} paColor={paColor} strapOn={false} strapColor={color} ringColor={ringColor} size={140} />
+                      )}
+                      <div className="display" style={{ fontSize: 17, fontWeight: 600, color: "#2B241F" }}>{m.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </Section>
+            )}
+
+            {currentStep === "size" && (
+              <Section title={`${stepNum("size")}. Scegli la dimensione`}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12 }}>
+                  {currentSizes.map((s) => (
                     <button key={s.id} className="opt" onClick={() => setSizeId(s.id)} style={optCardStyle(sizeId === s.id)}>
                       <div className="display" style={{ fontSize: 18, fontWeight: 600 }}>{s.name}</div>
                       <div style={{ fontSize: 13, opacity: 0.65 }}>{s.cm} cm</div>
@@ -418,7 +654,7 @@ export default function App() {
             )}
 
             {currentStep === "profile" && (
-              <Section title="2. Scegli il profilo della tua borsa">
+              <Section title={`${stepNum("profile")}. Scegli il profilo della tua borsa`}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12 }}>
                   <button className="opt" onClick={() => setHandleProfile("dritto")} style={optCardStyle(handleProfile === "dritto")}>
                     <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>Quadrato</div>
@@ -433,7 +669,7 @@ export default function App() {
             )}
 
             {currentStep === "hole" && (
-              <Section title={`${sizeId === "grande" ? "3" : "2"}. Come vorresti portare la tua clutch?`}>
+              <Section title={`${stepNum("hole")}. Come vorresti portare la tua clutch?`}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 12 }}>
                   <button className="opt" onClick={() => setHasHole(true)} style={optCardStyle(hasHole)}>
                     <div className="display" style={{ fontSize: 17, fontWeight: 600 }}>A mano</div>
@@ -448,7 +684,7 @@ export default function App() {
             )}
 
             {currentStep === "color" && (
-              <Section title={`${sizeId === "grande" ? "4" : "3"}. Colore del corpo`}>
+              <Section title={`${stepNum("color")}. Colore del corpo`}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                   {YARN_COLORS.map((c) => (
                     <ColorSwatch key={c.hex} hex={c.hex} name={c.name} size={38} selected={color === c.hex} onClick={() => setColor(c.hex)} />
@@ -460,7 +696,7 @@ export default function App() {
             {currentStep === "accessories" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                 <div className="display" style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", opacity: 0.6 }}>
-                  {sizeId === "grande" ? "5" : "4"}. Accessori opzionali
+                  {stepNum("accessories")}. Accessori opzionali
                 </div>
 
                 <AccessoryBlock title="Catenella" on={chainOn} onToggle={setChainOn}>
@@ -479,7 +715,9 @@ export default function App() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div>
                       <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>
-                        Il colore dei manici, se non diversamente specificato, coincide con quello del corpo della borsa.
+                        {isBorsetta
+                          ? "Il colore del manico, se non diversamente specificato, coincide con quello del corpo della borsa."
+                          : "Il colore dei manici, se non diversamente specificato, coincide con quello del corpo della borsa."}
                       </div>
                       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
                         <input type="checkbox" checked={strapColorDiffers} onChange={(e) => setStrapColorDiffers(e.target.checked)} />
